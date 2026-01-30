@@ -1,0 +1,822 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FANTASY NINJA | Elite Operations 2026</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/ScrollTrigger.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Inter:wght@300;400;600;800&display=swap" rel="stylesheet">
+    
+    <style>
+        :root {
+            --primary: #00ff88;
+            --secondary: #00d4ff;
+            --bg-dark: #030303;
+            --gold: #FFD700;
+            --silver: #C0C0C0;
+            --bronze: #CD7F32;
+        }
+
+        body {
+            background-color: var(--bg-dark);
+            color: white;
+            font-family: 'Inter', sans-serif;
+            overflow-x: hidden;
+            margin: 0;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        .font-heading { font-family: 'Orbitron', sans-serif; }
+
+        .glass-nav {
+            background: rgba(3, 3, 3, 0.9);
+            backdrop-filter: blur(15px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        /* Leaderboard Styles - UPDATED CIRCLE IMAGES */
+        .rank-row-1 { --rank-color: var(--gold); --glow: rgba(255, 215, 0, 0.3); }
+        .rank-row-2 { --rank-color: var(--silver); --glow: rgba(192, 192, 192, 0.3); }
+        .rank-row-3 { --rank-color: var(--bronze); --glow: rgba(205, 127, 50, 0.3); }
+        .rank-row-others { --rank-color: var(--primary); --glow: rgba(0, 255, 136, 0.2); }
+
+        .leaderboard-item {
+            position: relative;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            background: rgba(255, 255, 255, 0.02);
+            border-radius: 2rem;
+            margin-bottom: 0.75rem;
+            transition: all 0.4s cubic-bezier(0.19, 1, 0.22, 1);
+            opacity: 0;
+            transform: translateX(-50px);
+            cursor: pointer;
+        }
+
+        .leaderboard-item:hover {
+            background: var(--glow);
+            border-color: var(--rank-color);
+            transform: scale(1.02) translateX(10px);
+            box-shadow: 0 0 40px var(--glow);
+        }
+
+        .rank-number {
+            font-family: 'Orbitron', sans-serif;
+            font-weight: 900;
+            font-size: clamp(2rem, 5vw, 3.5rem);
+            color: var(--rank-color);
+            text-shadow: 0 0 15px var(--glow), 2px 2px 0px #000;
+            min-width: 70px;
+        }
+
+        .leaderboard-pfp {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            border: 2px solid var(--rank-color);
+            object-fit: cover;
+            box-shadow: 0 0 15px var(--glow);
+            background: #111;
+        }
+
+        /* Player Card Styles */
+        .player-card {
+            background: #000;
+            border-radius: 2rem;
+            transition: transform 0.6s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.4s ease, border-color 0.4s ease;
+            position: relative;
+            overflow: hidden;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            cursor: pointer;
+            z-index: 1;
+        }
+
+        .player-card.zoomed {
+            z-index: 40;
+            transform: scale(1.08);
+            border-color: var(--primary);
+            box-shadow: 0 0 50px rgba(0, 255, 136, 0.4);
+        }
+
+        .card-img-wrapper {
+            position: relative;
+            width: 100%;
+            aspect-ratio: 4 / 5; 
+            overflow: hidden;
+        }
+
+        .main-player-img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transition: transform 0.8s ease;
+        }
+
+        .rating-overlay {
+            position: absolute;
+            top: 25px;
+            left: 25px;
+            background: rgba(20, 20, 20, 0.75);
+            border: 2px solid var(--primary);
+            width: 60px;
+            height: 45px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 8px;
+            backdrop-filter: blur(5px);
+            z-index: 30;
+        }
+
+        .class-overlay {
+            position: absolute;
+            top: 25px;
+            right: 25px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            z-index: 30;
+        }
+
+        .class-portrait-circle {
+            width: 75px;
+            height: 75px;
+            border: 2px solid var(--primary);
+            border-radius: 50%;
+            overflow: hidden;
+            background: #000;
+            margin-bottom: 8px;
+            box-shadow: 0 0 15px rgba(0, 255, 136, 0.3);
+        }
+
+        .class-portrait-circle img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .class-player-name {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 8px;
+            font-weight: 700;
+            color: var(--primary);
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            margin-bottom: 4px;
+            background: rgba(0,0,0,0.6);
+            padding: 2px 6px;
+            border-radius: 4px;
+        }
+
+        .class-text-tag {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 7px;
+            font-weight: 900;
+            letter-spacing: 0.1em;
+            color: #000;
+            background: var(--primary);
+            padding: 3px 8px;
+            border-radius: 3px;
+            text-transform: uppercase;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+            white-space: nowrap;
+        }
+
+        .card-info-overlay {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            padding: 40px 25px 30px 25px;
+            background: linear-gradient(to top, rgba(0,0,0,0.9) 0%, rgba(0,0,0,0) 100%);
+            z-index: 20;
+        }
+
+        .player-meta {
+            font-family: 'Orbitron', sans-serif;
+            color: var(--primary);
+            font-size: 10px;
+            font-weight: 800;
+            letter-spacing: 0.2em;
+            margin-bottom: 4px;
+        }
+
+        .player-name-display {
+            font-family: 'Orbitron', sans-serif;
+            font-weight: 900;
+            font-size: 1.8rem;
+            line-height: 1;
+            text-transform: uppercase;
+            letter-spacing: -0.02em;
+            color: white;
+        }
+
+        /* Pitch Section */
+        #pitch-3d-container {
+            width: 100%;
+            height: 100%;
+            background: #000;
+            overflow: hidden;
+            touch-action: none;
+        }
+
+        /* Tactical Stats Sidebar */
+        #tactical-sidebar {
+            position: fixed;
+            top: 100px;
+            right: -400px;
+            width: 350px;
+            height: calc(100vh - 120px);
+            background: rgba(13, 13, 13, 0.95);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(0, 255, 136, 0.2);
+            border-radius: 2rem 0 0 2rem;
+            z-index: 60;
+            transition: right 0.6s cubic-bezier(0.19, 1, 0.22, 1);
+            padding: 2rem;
+            display: flex;
+            flex-direction: column;
+            box-shadow: -20px 0 50px rgba(0,0,0,0.5);
+        }
+
+        #tactical-sidebar.active {
+            right: 0;
+        }
+
+        /* Global UI Elements */
+        .reveal { opacity: 0; transform: translateY(30px); }
+        .stat-bar { height: 4px; background: rgba(255,255,255,0.1); border-radius: 10px; overflow: hidden; }
+        .stat-fill { height: 100%; background: linear-gradient(90deg, var(--primary), var(--secondary)); width: 0%; transition: width 1s ease-out; }
+        .active-link { color: var(--primary); border-bottom: 2px solid var(--primary); }
+
+        #loader { position: fixed; inset: 0; z-index: 100; background: #000; display: flex; align-items: center; justify-content: center; flex-direction: column; }
+        
+        .snapshot-frame {
+            position: relative;
+            width: 100%;
+            aspect-ratio: 16 / 9;
+            border-radius: 2.5rem;
+            overflow: hidden;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        .snapshot-overlay { background: linear-gradient(0deg, rgba(0,0,0,0.8) 0%, rgba(0,0,0,0) 40%); }
+
+        /* Modal Aesthetic */
+        .modal-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.9);
+            backdrop-filter: blur(15px);
+            z-index: 100;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.4s ease;
+        }
+
+        .modal-overlay.active { opacity: 1; pointer-events: auto; }
+
+        .modal-content {
+            background: #0d0d0d;
+            border: 1px solid rgba(0, 255, 136, 0.4);
+            border-radius: 2.5rem;
+            width: 95%;
+            max-width: 550px;
+            padding: 3rem;
+            position: relative;
+            transform: scale(0.9) translateY(30px);
+            transition: transform 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+            box-shadow: 0 0 100px rgba(0, 255, 136, 0.1);
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+
+        .input-ninja {
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            padding: 1rem 1.25rem;
+            width: 100%;
+            color: white;
+            font-size: 0.9rem;
+            outline: none;
+        }
+
+        .sponsor-placeholder-grid {
+            border: 2px dashed rgba(255, 255, 255, 0.1);
+            border-radius: 3rem;
+            height: 300px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(255, 255, 255, 0.01);
+        }
+
+        /* Transitions */
+        .page-container {
+            transition: opacity 0.5s ease;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- LOADER -->
+    <div id="loader">
+        <div class="text-4xl font-heading font-black italic mb-6 tracking-tighter">FANTASY<span class="text-[var(--primary)]">NINJA</span></div>
+        <div class="w-64 h-1 bg-white/5 rounded-full overflow-hidden">
+            <div id="loader-bar" class="h-full bg-[var(--primary)] w-0"></div>
+        </div>
+    </div>
+
+    <!-- SPONSOR MODAL -->
+    <div id="sponsor-modal" class="modal-overlay" onclick="toggleModal(false)">
+        <div class="modal-content" onclick="event.stopPropagation()">
+            <button onclick="toggleModal(false)" class="absolute top-6 right-8 text-gray-500 hover:text-white transition-colors">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+            </button>
+            <div class="text-center mb-8">
+                <div class="inline-block p-4 rounded-3xl bg-[var(--primary)]/10 text-[var(--primary)] mb-4">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L2 7l10 5 10-5-10-5z"></path><path d="M2 17l10 5 10-5"></path><path d="M2 12l10 5 10-5"></path></svg>
+                </div>
+                <h3 class="text-3xl font-heading font-black uppercase italic tracking-tight">Initiate <span class="text-[var(--primary)]">Alliance</span></h3>
+                <p class="text-gray-500 text-[10px] font-bold uppercase tracking-widest mt-2 px-10">Expand your brand's reach within the elite tactical ecosystem.</p>
+            </div>
+            <form class="space-y-5" onsubmit="event.preventDefault(); this.querySelector('button').innerText='SENDING...'; setTimeout(()=>toggleModal(false),1000);">
+                <div class="grid md:grid-cols-2 gap-4">
+                    <input type="text" placeholder="Brand Name" class="input-ninja" required>
+                    <input type="email" placeholder="Secure Email" class="input-ninja" required>
+                </div>
+                <select class="input-ninja" required>
+                    <option value="" disabled selected>Select Tier...</option>
+                    <option value="elite">Elite Operational Partner</option>
+                    <option value="tactical">Tactical Support</option>
+                </select>
+                <textarea placeholder="Proposed Strategy" class="input-ninja h-24 resize-none" required></textarea>
+                <button type="submit" class="w-full py-5 bg-[var(--primary)] text-black font-heading font-black uppercase text-[11px] rounded-2xl tracking-widest">Submit Inquiry</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- NAVIGATION -->
+    <nav class="fixed w-full z-50 p-4 md:p-6 flex justify-between items-center glass-nav">
+        <div class="text-xl md:text-2xl font-black font-heading tracking-tighter italic">FANTASY<span class="text-[var(--primary)]">NINJA</span></div>
+        <div class="flex space-x-6 md:space-x-8 font-heading text-[10px] uppercase tracking-widest font-bold">
+            <button onclick="switchPage('home')" id="nav-home" class="nav-btn active-link pb-1">Dashboard</button>
+            <button onclick="switchPage('lineup')" id="nav-lineup" class="nav-btn pb-1">Lineup</button>
+            <button onclick="switchPage('sponsors')" id="nav-sponsors" class="nav-btn pb-1">Sponsors</button>
+        </div>
+    </nav>
+
+    <!-- DASHBOARD PAGE -->
+    <main id="page-home" class="page-container pt-24">
+        <section class="min-h-[40vh] flex flex-col items-center justify-center relative px-6 text-center">
+            <h1 class="text-6xl md:text-[8rem] font-black font-heading leading-none tracking-tighter reveal mb-4">NINJA<br><span class="text-transparent bg-clip-text bg-gradient-to-r from-[var(--primary)] to-[var(--secondary)]">SQUAD</span></h1>
+            <p class="reveal text-gray-500 font-bold tracking-[0.5em] uppercase text-[10px]">The Ultimate Tactical Collective 2026</p>
+        </section>
+
+        <section id="leaderboard" class="max-w-5xl mx-auto px-6 py-10 reveal">
+            <h2 class="text-4xl font-heading font-black italic text-center mb-16 uppercase tracking-widest">Global <span class="text-[var(--primary)]">Elite</span> Rankings</h2>
+            <div class="space-y-4" id="leaderboard-content"></div>
+        </section>
+
+        <section id="group-snapshot" class="max-w-6xl mx-auto px-6 py-20 reveal">
+            <h2 class="text-4xl font-heading font-black italic text-center mb-12 uppercase tracking-widest">Group <span class="text-[var(--primary)]">Snapshot</span></h2>
+            <div class="snapshot-frame group">
+                <img src="https://lh3.googleusercontent.com/d/1Xcnq6FnONyNDjZJ921IAG42SxnU1Tg7k" class="w-full h-full object-cover transition-transform duration-1000 group-hover:scale-105" referrerpolicy="no-referrer">
+                <div class="absolute inset-0 snapshot-overlay flex flex-col justify-end p-8 md:p-12">
+                    <div class="border-l-4 border-[var(--primary)] pl-6">
+                        <p class="text-[var(--primary)] font-heading font-black text-xs md:text-sm uppercase tracking-[0.4em] mb-2">Class of 2026</p>
+                        <h3 class="text-white font-heading font-bold italic text-lg md:text-3xl leading-tight max-w-2xl">
+                            "Unity is the foundation of every tactical triumph."
+                        </h3>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="roster-section" class="max-w-7xl mx-auto px-6 py-20">
+            <div class="mb-12 reveal">
+                <h2 class="text-4xl font-heading font-black italic uppercase">The <span class="text-[var(--primary)]">Roster</span></h2>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8" id="roster-grid"></div>
+        </section>
+    </main>
+
+    <!-- LINEUP PAGE -->
+    <main id="page-lineup" class="page-container hidden h-screen overflow-hidden">
+        <div id="pitch-3d-container" class="relative">
+            <div class="absolute top-28 left-10 z-10 pointer-events-none">
+                <h2 class="text-4xl md:text-5xl font-heading font-black italic uppercase">Tactical <span class="text-[var(--primary)]">Roster</span></h2>
+                <div class="flex items-center space-x-2">
+                    <div class="w-2 h-2 bg-red-600 rounded-full animate-pulse"></div>
+                    <p class="text-gray-500 font-bold tracking-[0.3em] uppercase text-[10px]">Live Simulation Engine</p>
+                </div>
+            </div>
+
+            <!-- TACTICAL STATS SIDEBAR -->
+            <aside id="tactical-sidebar">
+                <button onclick="closeTacticalSidebar()" class="absolute top-6 left-6 text-gray-500 hover:text-white transition-colors">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6L6 18M6 6l12 12"/></svg>
+                </button>
+                <div id="sidebar-content" class="h-full overflow-y-auto pr-2">
+                    <!-- Dynamic Content -->
+                </div>
+            </aside>
+        </div>
+    </main>
+
+    <!-- SPONSORS PAGE -->
+    <main id="page-sponsors" class="page-container hidden pt-32 pb-20 px-6">
+        <div class="max-w-7xl mx-auto">
+            <div class="mb-16 reveal">
+                <h2 class="text-5xl font-heading font-black italic uppercase">Elite <span class="text-[var(--primary)]">Partners</span></h2>
+                <p class="text-gray-500 mt-2 font-bold tracking-[0.3em] uppercase text-xs italic">Fueling the Ninja Ecosystem • 2026</p>
+            </div>
+            
+            <div class="sponsor-placeholder-grid reveal">
+                <div class="text-center z-10">
+                    <p class="font-heading text-gray-500 font-bold uppercase tracking-[0.4em] text-xs italic">Operational Slots Classified</p>
+                </div>
+            </div>
+
+            <div class="mt-24 p-12 rounded-[3rem] bg-gradient-to-br from-[var(--primary)]/10 via-black to-transparent border border-[var(--primary)]/20 reveal relative overflow-hidden">
+                <div class="grid md:grid-cols-2 gap-12 items-center relative z-10">
+                    <div>
+                        <h3 class="text-4xl font-heading font-black uppercase mb-6 italic leading-tight">Strategic <br><span class="text-transparent bg-clip-text bg-gradient-to-r from-white to-gray-500">Synergy</span></h3>
+                        <p class="text-gray-400 leading-relaxed text-sm max-w-md">Join our journey as we redefine the boundaries of competitive play.</p>
+                    </div>
+                    <div class="flex flex-col items-center justify-center p-10 bg-black/60 rounded-[2.5rem] border border-white/10">
+                        <button onclick="toggleModal(true)" class="w-full px-12 py-5 bg-white text-black font-heading font-black uppercase text-xs rounded-2xl hover:bg-[var(--primary)] transition-all">
+                            Sponsor
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        const getDriveLink = (id) => `https://lh3.googleusercontent.com/d/${id}`;
+
+        const players = [
+            { id: "1", name: "Rayhan Ahmed Abid", pos: "ST", num: 7, rating: 90, imgId: "1WWJma6aWZOSD3fES1IAkNXlbm8ffON9h", className: "Lionel Messi", classImgId: "1deBcUit-C6UN9QWzFI4SxrLlDENU_Ru1", stats: {PAC:89, SHO:93, PAS:88, DRI:91, DEF:77, PHY:88}, tacticalPos: {x: 0, z: -85} },
+            { id: "2", name: "Saiful Islam", pos: "LW", num: 10, rating: 89, imgId: "105UzwXVHXnKGuS0bYpbbhc5j7gma_S2Q", className: "Neymar JR", classImgId: "1hjT0HR-jX73i4sDhBxOp0wwvmXYE1-e2", stats: {PAC:90, SHO:89, PAS:85, DRI:89, DEF:80, PHY:79}, tacticalPos: {x: -65, z: -40} },
+            { id: "4", name: "Rifat Hossain", pos: "RW", num: 11, rating: 88, imgId: "16pzlJTV3szPGzpjXJRWadkKDZR5Xvvh9", className: "Philippe Coutinho", classImgId: "15R2g0tTGJe7Bt8MvB3VMr8XTUyFZll7y", stats: {PAC:86, SHO:87, PAS:82, DRI:83, DEF:77, PHY:79}, tacticalPos: {x: 65, z: -40} },
+            { id: "3", name: "MD Yasin Khan", pos: "CAM", num: 8, rating: 88, imgId: "1ocBWyTB7XSrdMGWRO9ogFlVnyelp3t7D", className: "Jude Bellingham", classImgId: "17hhKiwmAgwywHSvnAAx-hbHIWRP8Y4CX", stats: {PAC:80, SHO:87, PAS:78, DRI:82, DEF:77, PHY:69}, tacticalPos: {x: 0, z: 5} },
+            { id: "5", name: "Siam Ahmed", pos: "LCB", num: 4, rating: 87, imgId: "1i9ARiGeffZcjfjihFVCs6s6MQSehswi7", className: "Sergio Ramos", classImgId: "1Lx3RLuMQzwQxbxKqD7B7akypNX4tzuTk", stats: {PAC:85, SHO:85, PAS:79, DRI:80, DEF:91, PHY:90}, tacticalPos: {x: -35, z: 55} },
+            { id: "7", name: "Shariya Rafi", pos: "RCB", num: 18, rating: 88, imgId: "16mJRSSOF3LGgd3H3F-XaCQeBazt0CkaW", className: "Van Dijk", classImgId: "1DfPrHy9Wv-syxGFPJggZRu4PgS-Q3Flo", stats: {PAC:80, SHO:89, PAS:77, DRI:78, DEF:89, PHY:90}, tacticalPos: {x: 35, z: 55} },
+            { id: "6", name: "Rafayat Amin", pos: "GK", num: 12, rating: 88, imgId: "1kUhvwHRlpMwXge82YV-e8x5sDGXqnLdS", className: "Emiliano Martínez", classImgId: "1Uhn2FKGBf9v7Ol0xjNxzIH9p_OugOHu1", stats: {DIV:86, HAN:82, KIC:88, REF:85, SPD:62, POS:88}, tacticalPos: {x: 0, z: 105} }
+        ];
+
+        let scene, camera, renderer, raycaster, mouse;
+        let interactiveSprites = [];
+        let currentPage = 'home';
+
+        function switchPage(page) {
+            if (page === currentPage) return;
+            
+            const currentEl = document.getElementById(`page-${currentPage}`);
+            const nextEl = document.getElementById(`page-${page}`);
+            
+            gsap.to(currentEl, { 
+                opacity: 0, 
+                x: -30, 
+                duration: 0.4, 
+                ease: "power2.in",
+                onComplete: () => {
+                    currentEl.classList.add('hidden');
+                    nextEl.classList.remove('hidden');
+                    
+                    gsap.fromTo(nextEl, 
+                        { opacity: 0, x: 30 }, 
+                        { opacity: 1, x: 0, duration: 0.6, ease: "power2.out" }
+                    );
+
+                    currentPage = page;
+                    
+                    if (page === 'lineup') {
+                        setTimeout(() => { if(!renderer) init3DPitch(); }, 100);
+                    } else {
+                        closeTacticalSidebar();
+                    }
+
+                    document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.remove('active-link'));
+                    document.getElementById(`nav-${page}`).classList.add('active-link');
+                    
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                    ScrollTrigger.refresh();
+                    initAnimations();
+                }
+            });
+        }
+
+        function toggleModal(show) {
+            document.getElementById('sponsor-modal').classList.toggle('active', show);
+        }
+
+        function closeTacticalSidebar() {
+            document.getElementById('tactical-sidebar').classList.remove('active');
+        }
+
+        function showTacticalSidebar(player) {
+            const sidebar = document.getElementById('tactical-sidebar');
+            const content = document.getElementById('sidebar-content');
+            
+            content.innerHTML = `
+                <div class="mt-8 text-center">
+                    <div class="relative inline-block mb-6">
+                        <img src="${getDriveLink(player.imgId)}" class="w-32 h-32 rounded-full border-2 border-[var(--primary)] object-cover" referrerpolicy="no-referrer">
+                        <div class="absolute -bottom-2 left-1/2 -translate-x-1/2 bg-[var(--primary)] text-black font-heading font-black px-4 py-1 rounded text-xs">
+                            ${player.rating} OVR
+                        </div>
+                    </div>
+                    <h3 class="font-heading font-black text-2xl uppercase tracking-tighter">${player.name}</h3>
+                    <p class="text-[var(--primary)] font-heading font-bold text-xs uppercase tracking-widest mt-1">${player.pos} | NO. ${player.num}</p>
+                </div>
+
+                <div class="mt-10 space-y-6">
+                    <h4 class="font-heading font-bold text-[10px] text-gray-500 uppercase tracking-widest border-b border-white/10 pb-2">Technical Analysis</h4>
+                    ${Object.entries(player.stats).map(([label, value]) => `
+                        <div>
+                            <div class="flex justify-between text-[11px] font-bold mb-2">
+                                <span class="text-gray-400">${label}</span>
+                                <span class="text-white">${value}</span>
+                            </div>
+                            <div class="h-1.5 bg-white/5 rounded-full overflow-hidden">
+                                <div class="h-full bg-[var(--primary)]" style="width: ${value}%"></div>
+                            </div>
+                        </div>
+                    `).join('')}
+                </div>
+
+                <div class="mt-10 p-6 rounded-2xl bg-white/5 border border-white/10">
+                    <p class="text-[9px] text-gray-500 font-black uppercase tracking-[0.2em] mb-4">Assigned Combat Class</p>
+                    <div class="flex items-center space-x-4">
+                        <img src="${getDriveLink(player.classImgId)}" class="w-12 h-12 rounded-lg border border-white/10" referrerpolicy="no-referrer">
+                        <div>
+                            <p class="text-white font-heading font-black text-sm uppercase">${player.className}</p>
+                            <span class="text-[var(--primary)] text-[8px] font-bold uppercase tracking-widest">TACTICAL ELITE</span>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            sidebar.classList.add('active');
+        }
+
+        async function createTacticalPlate(p) {
+            const canvas = document.createElement('canvas');
+            canvas.width = 1024; canvas.height = 1024;
+            const ctx = canvas.getContext('2d');
+            
+            return new Promise(resolve => {
+                const img = new Image();
+                img.crossOrigin = "anonymous"; img.referrerPolicy = "no-referrer";
+                img.onload = () => {
+                    ctx.save();
+                    ctx.beginPath(); ctx.arc(512, 400, 360, 0, Math.PI * 2); ctx.clip();
+                    ctx.drawImage(img, 100, -20, 824, 824);
+                    ctx.restore();
+                    
+                    ctx.strokeStyle = '#00ff88'; ctx.lineWidth = 15;
+                    ctx.beginPath(); ctx.arc(512, 400, 370, 0, Math.PI * 2); ctx.stroke();
+                    ctx.strokeStyle = 'rgba(0, 255, 136, 0.3)'; ctx.lineWidth = 40;
+                    ctx.beginPath(); ctx.arc(512, 400, 400, 0, Math.PI * 2); ctx.stroke();
+
+                    ctx.fillStyle = '#00ff88';
+                    ctx.beginPath(); ctx.roundRect(50, 780, 924, 210, 40); ctx.fill();
+                    
+                    ctx.textAlign = 'center'; ctx.fillStyle = '#000';
+                    const fullName = p.name.toUpperCase();
+                    let fontSize = 72;
+                    if (fullName.length > 15) fontSize = 54;
+                    if (fullName.length > 20) fontSize = 48;
+                    
+                    ctx.font = `900 ${fontSize}px Orbitron`;
+                    ctx.fillText(fullName, 512, 885);
+                    ctx.font = 'bold 45px Orbitron';
+                    ctx.fillText(p.pos + " | #" + p.num, 512, 955);
+                    
+                    const texture = new THREE.CanvasTexture(canvas);
+                    texture.anisotropy = 16;
+                    resolve(texture);
+                };
+                img.src = getDriveLink(p.imgId);
+            });
+        }
+
+        async function init3DPitch() {
+            const container = document.getElementById('pitch-3d-container');
+            if(!container) return;
+            
+            scene = new THREE.Scene();
+            camera = new THREE.PerspectiveCamera(40, container.clientWidth/container.clientHeight, 1, 3000);
+            renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, logarithmicDepthBuffer: true });
+            renderer.setPixelRatio(window.devicePixelRatio);
+            renderer.setSize(container.clientWidth, container.clientHeight);
+            container.appendChild(renderer.domElement);
+
+            raycaster = new THREE.Raycaster();
+            mouse = new THREE.Vector2();
+
+            scene.add(new THREE.AmbientLight(0xffffff, 1.4));
+            
+            const fieldWidth = 200, fieldHeight = 300;
+            const pCanvas = document.createElement('canvas');
+            pCanvas.width = 2048; pCanvas.height = 3200;
+            const pctx = pCanvas.getContext('2d');
+            
+            pctx.fillStyle = '#0a1a0a'; pctx.fillRect(0,0,2048,3200);
+            for(let i=0; i<18; i++) {
+                pctx.fillStyle = i%2===0 ? '#0d210d' : '#0a1a0a';
+                pctx.fillRect(0, i*(3200/18), 2048, 3200/18);
+            }
+            
+            pctx.strokeStyle = 'rgba(255,255,255,0.7)'; pctx.lineWidth = 12;
+            pctx.strokeRect(80, 80, 1888, 3040); 
+            pctx.beginPath(); pctx.moveTo(80, 1600); pctx.lineTo(1968, 1600); pctx.stroke(); 
+            pctx.beginPath(); pctx.arc(1024, 1600, 250, 0, Math.PI*2); pctx.stroke(); 
+            pctx.strokeRect(412, 80, 1224, 450); 
+            pctx.strokeRect(712, 80, 624, 160); 
+            pctx.strokeRect(412, 3120, 1224, -450); 
+            pctx.strokeRect(712, 3120, 624, -160); 
+
+            const fieldTexture = new THREE.CanvasTexture(pCanvas);
+            const fieldMesh = new THREE.Mesh(
+                new THREE.PlaneGeometry(fieldWidth, fieldHeight),
+                new THREE.MeshPhongMaterial({ map: fieldTexture })
+            );
+            fieldMesh.rotation.x = -Math.PI/2;
+            scene.add(fieldMesh);
+
+            const sortedPlayers = [...players].sort((a,b) => a.tacticalPos.z - b.tacticalPos.z);
+            for (const p of sortedPlayers) {
+                const texture = await createTacticalPlate(p);
+                const sprite = new THREE.Sprite(new THREE.SpriteMaterial({ 
+                    map: texture, 
+                    transparent: true,
+                    depthWrite: true,
+                    depthTest: true
+                }));
+                sprite.scale.set(44, 44, 1);
+                sprite.position.set(p.tacticalPos.x, 22, p.tacticalPos.z);
+                sprite.userData = { player: p };
+                scene.add(sprite);
+                interactiveSprites.push(sprite);
+            }
+
+            camera.position.set(0, 240, 320);
+            camera.lookAt(0, 0, -20);
+
+            container.addEventListener('click', onPitchClick);
+
+            const animate = () => {
+                if(renderer) {
+                    requestAnimationFrame(animate);
+                    renderer.render(scene, camera);
+                }
+            };
+            animate();
+        }
+
+        function onPitchClick(event) {
+            const container = document.getElementById('pitch-3d-container');
+            const rect = container.getBoundingClientRect();
+            mouse.x = ((event.clientX - rect.left) / container.clientWidth) * 2 - 1;
+            mouse.y = -((event.clientY - rect.top) / container.clientHeight) * 2 + 1;
+
+            raycaster.setFromCamera(mouse, camera);
+            const intersects = raycaster.intersectObjects(interactiveSprites);
+
+            if (intersects.length > 0) {
+                const player = intersects[0].object.userData.player;
+                showTacticalSidebar(player);
+            } else {
+                closeTacticalSidebar();
+            }
+        }
+
+        function toggleZoom(cardElement) {
+            const isZoomed = cardElement.classList.contains('zoomed');
+            document.querySelectorAll('.player-card.zoomed').forEach(card => card.classList.remove('zoomed'));
+            if (!isZoomed) cardElement.classList.add('zoomed');
+        }
+
+        function renderDashboard() {
+            // Render Leaderboard with UPDATED CIRCLE IMAGES
+            document.getElementById('leaderboard-content').innerHTML = players.map((p, i) => `
+                <div class="leaderboard-item rank-row-${i < 3 ? i+1 : 'others'} flex items-center justify-between py-5 px-8">
+                    <div class="flex items-center space-x-10">
+                        <span class="rank-number">#${i+1}</span>
+                        <div class="flex items-center space-x-6">
+                            <img src="${getDriveLink(p.imgId)}" class="leaderboard-pfp" referrerpolicy="no-referrer">
+                            <h4 class="font-heading font-black text-white uppercase text-lg tracking-tighter">${p.name}</h4>
+                        </div>
+                    </div>
+                    <div class="font-heading font-black text-3xl" style="color: var(--rank-color)">${p.rating}</div>
+                </div>`).join('');
+            
+            // Render Roster
+            document.getElementById('roster-grid').innerHTML = players.map(p => `
+            <div class="player-card reveal group" onclick="toggleZoom(this)">
+                <div class="card-img-wrapper">
+                    <img src="${getDriveLink(p.imgId)}" class="main-player-img" referrerpolicy="no-referrer">
+                    <div class="rating-overlay"><span class="font-heading font-black text-2xl text-[var(--primary)]">${p.rating}</span></div>
+                    
+                    <div class="class-overlay">
+                        <div class="class-portrait-circle">
+                            <img src="${getDriveLink(p.classImgId)}" alt="Class Player" referrerpolicy="no-referrer">
+                        </div>
+                        <div class="class-player-name">${p.className}</div>
+                        <div class="class-text-tag">CLASS</div>
+                    </div>
+
+                    <div class="card-info-overlay">
+                        <div class="player-meta">${p.pos} • NO ${p.num}</div>
+                        <h3 class="player-name-display">${p.name}</h3>
+                    </div>
+                </div>
+                <div class="p-8 pt-6">
+                    <div class="grid grid-cols-2 gap-x-8 gap-y-4 mb-6">
+                        ${Object.entries(p.stats).map(([l,v]) => `
+                        <div>
+                            <div class="flex justify-between text-[10px] font-black text-gray-500 mb-1"><span>${l}</span><span class="text-white">${v}</span></div>
+                            <div class="stat-bar"><div class="stat-fill" data-width="${v}%"></div></div>
+                        </div>`).join('')}
+                    </div>
+                </div>
+            </div>`).join('');
+        }
+
+        function initAnimations() {
+            ScrollTrigger.getAll().forEach(t => t.kill());
+
+            gsap.utils.toArray(".reveal").forEach(el => {
+                gsap.to(el, { 
+                    opacity: 1, 
+                    y: 0, 
+                    duration: 0.8, 
+                    ease: "power2.out",
+                    scrollTrigger: { 
+                        trigger: el, 
+                        start: "top 95%",
+                        toggleActions: "play none none none"
+                    } 
+                });
+            });
+
+            gsap.to(".leaderboard-item", { 
+                opacity: 1, 
+                x: 0, 
+                stagger: 0.05, 
+                duration: 0.6,
+                ease: "power2.out",
+                scrollTrigger: { 
+                    trigger: "#leaderboard", 
+                    start: "top 85%" 
+                } 
+            });
+
+            gsap.utils.toArray(".stat-fill").forEach(bar => {
+                gsap.to(bar, { 
+                    width: bar.dataset.width, 
+                    duration: 1.2, 
+                    ease: "expo.out",
+                    scrollTrigger: { 
+                        trigger: bar, 
+                        start: "top 100%" 
+                    } 
+                });
+            });
+        }
+
+        document.addEventListener("DOMContentLoaded", () => {
+            renderDashboard();
+
+            gsap.to("#loader-bar", { 
+                width: "100%", 
+                duration: 0.8, 
+                ease: "power1.inOut",
+                onComplete: () => {
+                    gsap.to("#loader", { 
+                        opacity: 0, 
+                        duration: 0.4, 
+                        onComplete: () => {
+                            document.getElementById('loader').style.display = 'none';
+                            initAnimations();
+                            ScrollTrigger.refresh();
+                        }
+                    });
+                }
+            });
+        });
+
+        window.addEventListener('resize', () => ScrollTrigger.refresh());
+    </script>
+</body>
+</html>
+
